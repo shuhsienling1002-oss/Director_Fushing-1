@@ -12,62 +12,34 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 終極手段：DOM 變動偵測器 (MutationObserver)
-# ==========================================
-# 這是比 CSS 強 100 倍的方法，它會主動攻擊浮水印
-kill_watermark_script = """
-<script>
-    // 定義一個殺手函數
-    function killWatermark() {
-        // 1. 針對手機版頂部 Header (漢堡選單那條)
-        var header = window.parent.document.querySelectorAll('[data-testid="stHeader"]');
-        header.forEach(el => el.style.display = 'none');
-        
-        // 2. 針對底部 "Hosted with Streamlit" 紅色Bar
-        var footer = window.parent.document.querySelectorAll('footer');
-        footer.forEach(el => el.style.display = 'none');
-        
-        var viewerBadge = window.parent.document.querySelectorAll('[class*="viewerBadge"]');
-        viewerBadge.forEach(el => el.style.display = 'none');
-
-        // 3. 針對 "Created by" 頭像
-        var toolbar = window.parent.document.querySelectorAll('[data-testid="stToolbar"]');
-        toolbar.forEach(el => el.style.display = 'none');
-        
-        var decoration = window.parent.document.querySelectorAll('[data-testid="stDecoration"]');
-        decoration.forEach(el => el.style.display = 'none');
-        
-        var statusWidget = window.parent.document.querySelectorAll('[data-testid="stStatusWidget"]');
-        statusWidget.forEach(el => el.style.display = 'none');
-    }
-
-    // 啟動一個觀察者，只要網頁有任何變動，就執行殺手函數
-    var observer = new MutationObserver(function(mutations) {
-        killWatermark();
-    });
-
-    // 開始監視整個網頁
-    observer.observe(window.parent.document.body, { childList: true, subtree: true });
-    
-    // 另外再加一個定時器，每 100ms 補刀一次，確保萬無一失
-    setInterval(killWatermark, 100);
-</script>
-"""
-components.html(kill_watermark_script, height=0)
-
-# ==========================================
-# 3. 視覺樣式 (保持原樣)
+# 2. 連結封印術 (CSS)
 # ==========================================
 st.markdown("""
     <style>
+    /* 1. 禁止點擊 "Created by" 與頭像 */
+    .viewerBadge_container__1QSob, 
+    div[class*="viewerBadge"],
+    div[data-testid="stToolbar"] {
+        pointer-events: none !important; /* 核心指令：禁止滑鼠/手指點擊事件 */
+        cursor: default !important;      /* 滑鼠移過去不會變手型 */
+        opacity: 0.6;                    /* 稍微讓它淡一點，降低存在感 */
+    }
+    
+    /* 2. 依然隱藏 Header (漢堡選單)，讓畫面乾淨 */
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {visibility: hidden;}
+    
+    /* 3. 隱藏底部 Footer (Made with Streamlit) - 這個通常是文字連結，建議還是藏起來 */
+    footer {display: none !important;}
+    
+    /* 4. 手機版版面調整 */
     .stApp {
         background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
-        /* 強制將內容往上推，蓋住可能殘留的頂部空白 */
-        margin-top: -60px; 
+        margin-top: -50px; /* 往上拉填補空白 */
     }
-    
-    /* 卡片樣式 */
+
+    /* 5. 卡片與標題樣式 (不變) */
     .header-box {
         background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
         padding: 20px;
@@ -79,14 +51,31 @@ st.markdown("""
     }
     .header-title { font-size: 28px; font-weight: bold; margin: 0; }
     .header-subtitle { font-size: 18px; opacity: 0.9; margin-top: 5px; }
+    
     .benefit-card { background-color: white; border-left: 5px solid #2E8B57; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .money-tag { color: #d63384; font-size: 22px; font-weight: 900; }
     .location-tag { font-size: 14px; color: #666; background-color: #f1f3f5; padding: 2px 8px; border-radius: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
+# 雙重保險：用 JS 再鎖一次連結功能
+js_lock = """
+<script>
+    setInterval(function() {
+        // 抓取所有連結與按鈕
+        var badges = window.parent.document.querySelectorAll('[class*="viewerBadge"] a, [data-testid="stToolbar"] a');
+        badges.forEach(function(el) {
+            el.href = "javascript:void(0)"; // 把連結網址清空
+            el.target = "";                  // 取消開新視窗
+            el.style.pointerEvents = "none"; // 禁止點擊
+        });
+    }, 1000);
+</script>
+"""
+components.html(js_lock, height=0)
+
 # ==========================================
-# 4. 內容區
+# 3. 頁面內容
 # ==========================================
 st.markdown("""
     <div class="header-box">
@@ -175,7 +164,7 @@ with tabs[3]:
     show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 5. 底部聯絡區
+# 4. 底部聯絡區
 # ==========================================
 st.markdown("---")
 col_footer1, col_footer2 = st.columns(2)
