@@ -85,7 +85,7 @@ st.markdown("""
 # ==========================================
 st.markdown("""
     <div class="header-box">
-        <div class="header-title">⛰️ 復興區長者福利小幫手</div>
+        <div class="header-title">⛰️ 復興區福利小幫手</div>
         <div class="header-subtitle">桃園市復興區長 <b>蘇佐璽</b> 關心您 ❤️</div>
     </div>
 """, unsafe_allow_html=True)
