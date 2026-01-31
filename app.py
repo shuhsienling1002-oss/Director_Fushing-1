@@ -1,3 +1,16 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+# 設定頁面 (這是 Python 語法)
+st.set_page_config(
+    page_title="復興區長者福利小幫手",
+    page_icon="⛰️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# 把 HTML 網頁程式碼包在一個變數裡 (這是 Python 字串)
+html_code = """
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -10,7 +23,7 @@
             --primary-color: #2E8B57; /* 復興區綠 */
             --secondary-color: #3CB371;
             --highlight-color: #d63384; /* 金額桃紅 */
-            --bg-color: #f8f9fa;
+            --bg-color: #ffffff;
         }
 
         body {
@@ -19,7 +32,8 @@
             margin: 0;
             padding: 0;
             color: #333;
-            padding-bottom: 60px; /* 預留底部空間 */
+            /* 隱藏捲軸但允許捲動 */
+            overflow-y: auto; 
         }
 
         /* === 頂部標題區 (蘇佐璽區長形象) === */
@@ -31,7 +45,9 @@
             border-bottom-left-radius: 30px;
             border-bottom-right-radius: 30px;
             box-shadow: 0 4px 10px rgba(46, 139, 87, 0.3);
-            margin-bottom: -30px; /* 讓內容卡片往上疊 */
+            margin-bottom: -30px;
+            position: relative;
+            z-index: 2;
         }
         .header-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
         .header-subtitle { font-size: 16px; opacity: 0.95; }
@@ -42,6 +58,9 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 0 15px;
+            padding-bottom: 80px; /* 預留底部空間 */
+            position: relative;
+            z-index: 1;
         }
 
         /* === 輸入卡片 === */
@@ -51,6 +70,7 @@
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             margin-bottom: 20px;
+            border: 1px solid #eee;
         }
         .section-title {
             font-size: 18px;
@@ -103,6 +123,7 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 15px;
+            user-select: none;
         }
         .checkbox-item input { margin-right: 10px; transform: scale(1.2); accent-color: var(--primary-color); }
 
@@ -115,6 +136,7 @@
             margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             overflow-x: auto;
+            border: 1px solid #eee;
         }
         .tab-btn {
             flex: 1;
@@ -146,7 +168,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             position: relative;
         }
-        /* 重點項目高亮 (如復興區敬老卡) */
         .result-card.highlight {
             border-left-color: #FFD700;
             background-color: #fffbea;
@@ -170,7 +191,7 @@
             opacity: 0.6;
             background: #f8f8f8;
             border-left-color: #ccc;
-            display: none; /* 預設隱藏不符合的，讓畫面乾淨，也可改為 block */
+            display: none; 
         }
         .show-locked .locked-item { display: block; }
 
@@ -182,6 +203,7 @@
             color: #888;
             padding: 20px;
             background: #f1f3f5;
+            border-radius: 15px;
         }
         .contact-grid {
             display: grid;
@@ -236,8 +258,7 @@
             <button class="tab-btn" onclick="switchTab('tab4', this)">🛡️ 其他權益</button>
         </div>
 
-        <div id="tab1" class="benefit-list active">
-            </div>
+        <div id="tab1" class="benefit-list active"></div>
         <div id="tab2" class="benefit-list"></div>
         <div id="tab3" class="benefit-list"></div>
         <div id="tab4" class="benefit-list"></div>
@@ -247,10 +268,8 @@
                 <input type="checkbox" id="show_all" onchange="toggleLocked()"> 顯示未符合項目
             </label>
         </div>
-    </div>
 
-    <div class="footer">
-        <div class="container">
+        <div class="footer">
             <div class="contact-grid">
                 <div>
                     <div class="contact-title">📞 服務專線</div>
@@ -263,16 +282,12 @@
                     <div>🔸 衛生所：(03) 382-2325</div>
                 </div>
             </div>
-            <div style="margin-top: 10px;">
-                ⚠️ 本試算系統僅供參考，實際資格以政府機關最新核定為準。
-            </div>
+            <div>⚠️ 本試算系統僅供參考，實際資格以政府機關最新核定為準。</div>
         </div>
     </div>
 
     <script>
-        // 資料庫：所有福利項目邏輯
         const benefits = [
-            // === Tab 1: 現金 ===
             { tab: 'tab1', name: "桃園老人三節禮金", money: "$2,500/每節 (年領$7,500)", note: "原住民55歲設籍滿6個月", unit: "區公所社會課", check: (d) => d.age >= 55 },
             { tab: 'tab1', name: "桃園重陽敬老金", money: "$2,500/年", note: "原住民55歲 (一般65歲)", unit: "區公所社會課", check: (d) => d.age >= 55 },
             { tab: 'tab1', name: "原住民給付 (國保)", money: "$4,049/月", note: "55-64歲專屬 (與老農互斥)", unit: "區公所原民課", check: (d) => d.age >= 55 && d.age < 65 && !d.is_farmer },
@@ -280,20 +295,17 @@
             { tab: 'tab1', name: "桃園原民急難救助", money: "最高3萬", note: "意外/重病/死亡 (3個月內申請)", unit: "區公所原民課", check: (d) => true },
             { tab: 'tab1', name: "弱勢兒少托育(隔代)", money: "$3,000起/月", note: "祖父母照顧孫子女補助", unit: "區公所社會課", check: (d) => d.grandparenting && d.is_low_income },
 
-            // === Tab 2: 醫療 ===
             { tab: 'tab2', name: "桃園原民假牙補助", money: "最高4.4萬", note: "需先至診所估價", unit: "區公所原民課", check: (d) => d.age >= 55 },
             { tab: 'tab2', name: "健保費全額補助", money: "全額減免", note: "55-64歲原住民 (系統自動減免)", unit: "健保局", check: (d) => d.age >= 55 },
             { tab: 'tab2', name: "成人健康檢查", money: "免費", note: "每年一次 (原住民提早至55歲)", unit: "衛生所", check: (d) => d.age >= 55 },
             { tab: 'tab2', name: "身障輔具補助", money: "全額/部分", note: "助聽器/氣墊床等", unit: "區公所社會課", check: (d) => d.has_disability },
 
-            // === Tab 3: 居住交通 ===
             { tab: 'tab3', name: "復興區敬老愛心卡", money: "每月1000點", note: "復興區民專屬福利 (一般區800點)", unit: "區公所社會課", check: (d) => d.age >= 55, highlight: true },
             { tab: 'tab3', name: "愛心計程車", money: "點數折抵", note: "單趟100元以下補36點", unit: "各大車隊", check: (d) => d.age >= 55 },
             { tab: 'tab3', name: "桃園修繕住宅補助", money: "最高15萬", note: "屋頂/衛浴修繕 (需自有)", unit: "區公所原民課", check: (d) => d.is_owner },
             { tab: 'tab3', name: "桃園建購住宅補助", money: "最高22萬", note: "購買或自建房屋", unit: "區公所原民課", check: (d) => d.is_owner },
             { tab: 'tab3', name: "租金補貼 (300億)", money: "依等級 ($3000起)", note: "租屋者可申請", unit: "營建署", check: (d) => d.is_renter },
 
-            // === Tab 4: 其他 ===
             { tab: 'tab4', name: "農保喪葬津貼", money: "$153,000", note: "農民身故 (由家屬請領)", unit: "農會保險部", check: (d) => d.is_farmer },
             { tab: 'tab4', name: "國保喪葬給付", money: "約9.8萬", note: "一般國保身故 (由家屬請領)", unit: "勞保局", check: (d) => !d.is_farmer },
             { tab: 'tab4', name: "原住民法律扶助", money: "律師費全免", note: "訴訟/法律諮詢", unit: "法扶基金會", check: (d) => true },
@@ -301,7 +313,6 @@
         ];
 
         function calculate() {
-            // 1. 獲取當前輸入
             const data = {
                 age: parseInt(document.getElementById('age').value) || 0,
                 is_farmer: document.getElementById('is_farmer').checked,
@@ -312,17 +323,14 @@
                 grandparenting: document.getElementById('grandparenting').checked
             };
 
-            // 2. 清空顯示區
             ['tab1', 'tab2', 'tab3', 'tab4'].forEach(id => {
                 document.getElementById(id).innerHTML = '';
             });
 
-            // 3. 生成卡片
             benefits.forEach((item, index) => {
                 const qualify = item.check(data);
                 const container = document.getElementById(item.tab);
                 
-                // 決定樣式
                 let className = "result-card";
                 if (item.highlight && qualify) className += " highlight";
                 if (!qualify) className += " locked-item";
@@ -342,14 +350,12 @@
                 `;
                 container.innerHTML += html;
             });
+            toggleLocked();
         }
 
         function switchTab(tabId, btn) {
-            // 切換內容
             document.querySelectorAll('.benefit-list').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-
-            // 切換按鈕樣式
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
         }
@@ -366,3 +372,19 @@
     </script>
 </body>
 </html>
+"""
+
+# 渲染 HTML (這裡才是 Python 的指令)
+# height 設定高一點，避免出現雙重捲軸
+components.html(html_code, height=1200, scrolling=True)
+
+# 再次嘗試強制隱藏 Streamlit 外框 (不保證 100% 成功，但盡力而為)
+st.markdown("""
+    <style>
+        /* 隱藏上方選單 */
+        header {visibility: hidden;}
+        /* 隱藏底部 Footer */
+        footer {visibility: hidden;}
+        .stApp { margin-top: -60px; }
+    </style>
+""", unsafe_allow_html=True)
