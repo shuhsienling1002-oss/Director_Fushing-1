@@ -7,11 +7,11 @@ st.set_page_config(
     page_title="復興區長者福利試算系統",
     page_icon="⛰️",
     layout="centered",
-    initial_sidebar_state="collapsed" # 預設收起側邊欄
+    initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. CSS 美化設計 + ⛔ 強力隱藏浮水印
+# 2. CSS 終極美化 + ⛔ 核彈級隱藏浮水印
 # ==========================================
 st.markdown("""
     <style>
@@ -21,19 +21,30 @@ st.markdown("""
         font-family: "Microsoft JhengHei", sans-serif;
     }
     
-    /* === ⛔ 強力隱藏 Streamlit 官方浮水印與選單 === */
-    /* 1. 隱藏右上角漢堡選單 */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
+    /* ========================================= */
+    /* ⛔ 終極隱藏區 (針對手機版強化) */
+    /* ========================================= */
     
-    /* 2. 隱藏底部 "Made with Streamlit" */
-    footer {visibility: hidden; display: none !important;}
+    /* 1. 隱藏上方 Header (漢堡選單、彩條、頭像) */
+    header[data-testid="stHeader"] {display: none !important;}
+    div[data-testid="stToolbar"] {display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
     
-    /* 3. 隱藏 Streamlit Cloud 的 "Hosted with" 紅色Bar 與 "Created by" */
-    /* 這些是平台加的，需用特定 class 強制關閉 */
-    .stApp > header {display: none !important;}
-    .viewerBadge_container__1QSob {display: none !important;}
+    /* 2. 隱藏底部 Footer (Made with Streamlit) */
+    footer {display: none !important; visibility: hidden !important;}
+    
+    /* 3. 隱藏右下角/手機底部的 "Hosted with Streamlit" 與 "Viewer Badge" */
+    /* 使用模糊比對選取器，不管它亂碼怎麼變都能抓到 */
     div[class^="viewerBadge"] {display: none !important;}
+    div[class*="viewerBadge"] {display: none !important;}
+    
+    /* 4. 針對手機版可能的嵌入層 (iFrame周邊) */
+    .st-emotion-cache-1y4p8pa {padding-top: 0rem !important;} /* 調整頂部留白 */
+    
+    /* 5. 隱藏狀態讀取小人 (Running man) */
+    div[data-testid="stStatusWidget"] {display: none !important;}
+
+    /* ========================================= */
     
     /* === 標題區塊設計 === */
     .header-box {
@@ -43,6 +54,7 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 25px;
+        margin-top: -50px; /* 因為隱藏了 header，把內容往上拉填滿 */
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .header-title {
@@ -85,7 +97,7 @@ st.markdown("""
 # ==========================================
 st.markdown("""
     <div class="header-box">
-        <div class="header-title">⛰️ 復興區福利小幫手</div>
+        <div class="header-title">⛰️ 復興區長者福利小幫手</div>
         <div class="header-subtitle">桃園市復興區長 <b>蘇佐璽</b> 關心您 ❤️</div>
     </div>
 """, unsafe_allow_html=True)
@@ -182,7 +194,7 @@ with tabs[3]:
     show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 7. 底部聯絡區 (純淨版)
+# 7. 底部聯絡區
 # ==========================================
 st.markdown("---")
 col_footer1, col_footer2 = st.columns(2)
