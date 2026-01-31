@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ==========================================
 # 1. 系統設定 (復興區專屬版)
@@ -11,7 +12,74 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CSS 終極美化 + ⛔ 核彈級隱藏浮水印
+# 2. 核彈級隱藏工程 (CSS + JavaScript)
+# ==========================================
+def inject_hide_style():
+    # 1. 強力 CSS 隱藏
+    hide_css = """
+    <style>
+        /* 隱藏上方選單與 Header */
+        header {visibility: hidden !important; display: none !important;}
+        [data-testid="stHeader"] {visibility: hidden !important; display: none !important;}
+        
+        /* 隱藏底部 Footer */
+        footer {visibility: hidden !important; display: none !important;}
+        .stFooter {display: none !important;}
+        
+        /* 隱藏右下角/底部的浮水印 (Hosted with Streamlit) */
+        div[class^="viewerBadge"] {visibility: hidden !important; display: none !important;}
+        .viewerBadge_container__1QSob {display: none !important;}
+        
+        /* 隱藏頭像與 Created by */
+        div[data-testid="stToolbar"] {display: none !important;}
+        div[data-testid="stDecoration"] {display: none !important;}
+        div[data-testid="stStatusWidget"] {display: none !important;}
+        
+        /* 手機版調整 */
+        .stApp {margin-top: -80px;} /* 強制往上拉，蓋住可能的殘留 */
+    </style>
+    """
+    st.markdown(hide_css, unsafe_allow_html=True)
+
+    # 2. JavaScript 異步移除 (針對頑強元素)
+    # 這段 JS 會每隔 0.5 秒檢查一次頁面，發現浮水印就直接砍掉 DOM 節點
+    hide_js = """
+    <script>
+        function removeWatermarks() {
+            // 鎖定所有可能的浮水印 class 關鍵字
+            const selectors = [
+                'div[class*="viewerBadge"]',
+                '[data-testid="stHeader"]',
+                'footer',
+                'div[data-testid="stToolbar"]'
+            ];
+            
+            selectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                    el.innerHTML = ''; // 清空內容
+                });
+            });
+        }
+        
+        // 頁面加載後執行
+        window.addEventListener('load', function() {
+            removeWatermarks();
+            // 每 500 毫秒再殺一次，確保動態載入的也被刪除
+            setInterval(removeWatermarks, 500);
+        });
+    </script>
+    """
+    # 將 JS 注入到頁面底部 (height=0 隱藏執行框)
+    components.html(hide_js, height=0)
+
+# 執行隱藏指令
+inject_hide_style()
+
+# ==========================================
+# 3. CSS 美化設計 (視覺優化)
 # ==========================================
 st.markdown("""
     <style>
@@ -21,31 +89,6 @@ st.markdown("""
         font-family: "Microsoft JhengHei", sans-serif;
     }
     
-    /* ========================================= */
-    /* ⛔ 終極隱藏區 (針對手機版強化) */
-    /* ========================================= */
-    
-    /* 1. 隱藏上方 Header (漢堡選單、彩條、頭像) */
-    header[data-testid="stHeader"] {display: none !important;}
-    div[data-testid="stToolbar"] {display: none !important;}
-    div[data-testid="stDecoration"] {display: none !important;}
-    
-    /* 2. 隱藏底部 Footer (Made with Streamlit) */
-    footer {display: none !important; visibility: hidden !important;}
-    
-    /* 3. 隱藏右下角/手機底部的 "Hosted with Streamlit" 與 "Viewer Badge" */
-    /* 使用模糊比對選取器，不管它亂碼怎麼變都能抓到 */
-    div[class^="viewerBadge"] {display: none !important;}
-    div[class*="viewerBadge"] {display: none !important;}
-    
-    /* 4. 針對手機版可能的嵌入層 (iFrame周邊) */
-    .st-emotion-cache-1y4p8pa {padding-top: 0rem !important;} /* 調整頂部留白 */
-    
-    /* 5. 隱藏狀態讀取小人 (Running man) */
-    div[data-testid="stStatusWidget"] {display: none !important;}
-
-    /* ========================================= */
-    
     /* === 標題區塊設計 === */
     .header-box {
         background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
@@ -54,7 +97,7 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 25px;
-        margin-top: -50px; /* 因為隱藏了 header，把內容往上拉填滿 */
+        margin-top: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .header-title {
@@ -93,7 +136,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. 頁面標題區 (蘇佐璽區長形象)
+# 4. 頁面標題區 (蘇佐璽區長形象)
 # ==========================================
 st.markdown("""
     <div class="header-box">
@@ -103,7 +146,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 輸入區 (條件設定)
+# 5. 輸入區 (條件設定)
 # ==========================================
 with st.container(border=True):
     st.markdown("### 📝 請勾選長輩狀況")
@@ -125,7 +168,7 @@ with st.container(border=True):
         grandparenting = st.checkbox("👶 協助照顧孫子女")
 
 # ==========================================
-# 5. 核心顯示函數
+# 6. 核心顯示函數
 # ==========================================
 def show_item(index, name, money, qualify, note, location, highlight=False):
     if qualify:
@@ -156,7 +199,7 @@ def show_item(index, name, money, qualify, note, location, highlight=False):
             st.caption(f"承辦單位：{location}")
 
 # ==========================================
-# 6. 福利清單
+# 7. 福利清單
 # ==========================================
 st.markdown("### 💰 您的專屬福利試算結果")
 
@@ -194,7 +237,7 @@ with tabs[3]:
     show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 7. 底部聯絡區
+# 8. 底部聯絡區 (純淨版)
 # ==========================================
 st.markdown("---")
 col_footer1, col_footer2 = st.columns(2)
