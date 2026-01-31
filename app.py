@@ -12,34 +12,70 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 連結封印術 (CSS)
+# 2. 🛡️ 隱形盾牌技術 (物理阻擋連結)
+# ==========================================
+# 原理：在螢幕的最上方和最下方，各蓋上一層透明的 div，攔截所有的點擊事件
+shield_code = """
+<style>
+    /* 定義隱形盾牌的樣式 */
+    .invisible-shield-top {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;      /* 蓋住整個頂部導航列 */
+        height: 60px;     /* 高度足以覆蓋頭像和選單 */
+        z-index: 9999999; /* 層級最高，壓在所有東西上面 */
+        background: transparent; /* 透明 */
+        /* background: rgba(255,0,0,0.2); 測試時可打開這行看紅色區塊 */
+    }
+    
+    .invisible-shield-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;     /* 蓋住底部浮水印 */
+        z-index: 9999999;
+        background: transparent;
+    }
+    
+    /* 還是保留原本的隱藏語法，作為雙重保險 */
+    header {visibility: hidden !important;}
+    footer {visibility: hidden !important; display: none !important;}
+    div[class^="viewerBadge"] {visibility: hidden !important;}
+</style>
+
+<div class="invisible-shield-top"></div>
+<div class="invisible-shield-bottom"></div>
+
+<script>
+    // 三重保險：用 JS 強制攔截所有連向 streamlit.app 的點擊
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('a');
+        if (target && target.href && target.href.includes('streamlit')) {
+            e.preventDefault(); // 阻止跳轉
+            e.stopPropagation(); // 阻止事件傳遞
+            console.log("已攔截外部連結");
+            return false;
+        }
+    }, true);
+</script>
+"""
+components.html(shield_code, height=0)
+
+# ==========================================
+# 3. 視覺樣式 (CSS)
 # ==========================================
 st.markdown("""
     <style>
-    /* 1. 禁止點擊 "Created by" 與頭像 */
-    .viewerBadge_container__1QSob, 
-    div[class*="viewerBadge"],
-    div[data-testid="stToolbar"] {
-        pointer-events: none !important; /* 核心指令：禁止滑鼠/手指點擊事件 */
-        cursor: default !important;      /* 滑鼠移過去不會變手型 */
-        opacity: 0.6;                    /* 稍微讓它淡一點，降低存在感 */
-    }
-    
-    /* 2. 依然隱藏 Header (漢堡選單)，讓畫面乾淨 */
-    header {visibility: hidden;}
-    [data-testid="stHeader"] {visibility: hidden;}
-    
-    /* 3. 隱藏底部 Footer (Made with Streamlit) - 這個通常是文字連結，建議還是藏起來 */
-    footer {display: none !important;}
-    
-    /* 4. 手機版版面調整 */
     .stApp {
         background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
-        margin-top: -50px; /* 往上拉填補空白 */
+        /* 因為頂部被蓋住，內容要往下移一點點，或是保持不動 */
+        margin-top: -50px;
     }
-
-    /* 5. 卡片與標題樣式 (不變) */
+    
+    /* 標題與卡片樣式 */
     .header-box {
         background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
         padding: 20px;
@@ -48,6 +84,9 @@ st.markdown("""
         text-align: center;
         margin-bottom: 25px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* 確保標題本身可以被點擊(雖然沒功能)，不被盾牌蓋太多 */
+        position: relative;
+        z-index: 1; 
     }
     .header-title { font-size: 28px; font-weight: bold; margin: 0; }
     .header-subtitle { font-size: 18px; opacity: 0.9; margin-top: 5px; }
@@ -58,24 +97,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 雙重保險：用 JS 再鎖一次連結功能
-js_lock = """
-<script>
-    setInterval(function() {
-        // 抓取所有連結與按鈕
-        var badges = window.parent.document.querySelectorAll('[class*="viewerBadge"] a, [data-testid="stToolbar"] a');
-        badges.forEach(function(el) {
-            el.href = "javascript:void(0)"; // 把連結網址清空
-            el.target = "";                  // 取消開新視窗
-            el.style.pointerEvents = "none"; // 禁止點擊
-        });
-    }, 1000);
-</script>
-"""
-components.html(js_lock, height=0)
-
 # ==========================================
-# 3. 頁面內容
+# 4. 頁面內容
 # ==========================================
 st.markdown("""
     <div class="header-box">
@@ -164,7 +187,7 @@ with tabs[3]:
     show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 4. 底部聯絡區
+# 5. 底部聯絡區
 # ==========================================
 st.markdown("---")
 col_footer1, col_footer2 = st.columns(2)
