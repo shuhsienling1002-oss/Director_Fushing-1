@@ -1,115 +1,155 @@
 import streamlit as st
 
 # ==========================================
-# 1. 系統設定 (桃園專屬版)
+# 1. 系統設定 (復興區專屬版)
 # ==========================================
 st.set_page_config(
-    page_title="三一協會專屬福利系統", # 網頁標籤也改了
-    page_icon="👵",
+    page_title="復興區長者福利試算系統",
+    page_icon="⛰️",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# 🔒 登入驗證 (內部訓練專用模式)
+# 2. CSS 美化設計 (視覺優化核心)
 # ==========================================
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-
-if not st.session_state.authenticated:
-    # --- 🛡️ 這裡做了戰略性修改 ---
-    st.title("🔒 三一協會專屬會員福利")
-    st.markdown("### ⚠️ 本系統僅供會員使用")
-    st.caption("非公開資訊，密碼請向三一協會索取")
-    
-    password_input = st.text_input("請輸入授權碼:", type="password")
-    
-    if st.button("登入系統"):
-        if password_input == "1234":
-            st.session_state.authenticated = True
-            st.rerun()  # 密碼正確，重新整理進入主畫面
-        else:
-            st.error("授權碼錯誤，請聯繫協會管理員 ❌")
-            
-    st.stop()  # ⛔ 熔斷機制：未登入前停止執行
-
-# ==========================================
-# (以下內容只有登入後才會顯示)
-# ==========================================
-
-# CSS: 大字體、清晰卡片
 st.markdown("""
     <style>
-    html, body, [class*="css"] {
+    /* 全站字體與背景 */
+    .stApp {
+        background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
-        font-size: 20px;
     }
-    .big-money {
-        font-size: 24px;
-        color: #C2185B; /* 桃紅色 */
+    
+    /* 隱藏 Streamlit 預設 Footer 與漢堡選單的製作資訊 */
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    
+    /* 標題區塊設計 */
+    .header-box {
+        background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
+        padding: 20px;
+        border-radius: 15px;
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .header-title {
+        font-size: 28px;
         font-weight: bold;
+        margin: 0;
     }
-    .benefit-item {
-        border-bottom: 1px solid #ddd;
-        padding: 10px 0;
+    .header-subtitle {
+        font-size: 18px;
+        opacity: 0.9;
+        margin-top: 5px;
+    }
+    
+    /* 福利卡片設計 */
+    .benefit-card {
+        background-color: white;
+        border-left: 5px solid #2E8B57; /* 復興區綠 */
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .money-tag {
+        color: #d63384; /* 顯眼的桃紅色 */
+        font-size: 22px;
+        font-weight: 900;
+    }
+    .location-tag {
+        font-size: 14px;
+        color: #666;
+        background-color: #f1f3f5;
+        padding: 2px 8px;
+        border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 標題與輸入 (內部教材視角)
+# 3. 頁面標題區 (蘇佐璽區長形象)
 # ==========================================
-st.title("👵 三一協會 kalas 福利試算教材")
-st.caption("✅ 志工專用：協助桃園原住民長者試算練習")
+st.markdown("""
+    <div class="header-box">
+        <div class="header-title">⛰️ 復興區長者福利小幫手</div>
+        <div class="header-subtitle">桃園市復興區長 <b>蘇佐璽</b> 關心您 ❤️</div>
+    </div>
+""", unsafe_allow_html=True)
 
-# 加入登出按鈕
-if st.button("🔒 結束訓練 (登出)", type="secondary"):
-    st.session_state.authenticated = False
-    st.rerun()
-
-with st.expander("📝 案例條件設定 (點此展開)", expanded=True):
-    age = st.number_input("長輩年齡 (Mihecaan)", 50, 120, 55)
+# ==========================================
+# 4. 輸入區 (條件設定)
+# ==========================================
+with st.container(border=True):
+    st.markdown("### 📝 請勾選長輩狀況")
     
+    col_age, col_res = st.columns([1, 2])
+    with col_age:
+        age = st.number_input("長輩年齡 (歲)", 50, 120, 55)
+    with col_res:
+        st.info("本系統以 **原住民身分** 為預設計算標準")
+
     c1, c2 = st.columns(2)
     with c1:
-        is_farmer = st.checkbox("具有農保身分")
-        is_low_income = st.checkbox("列冊中低收入戶")
-        has_disability = st.checkbox("領有身障手冊")
+        is_farmer = st.checkbox("🌱 具有農保身分")
+        is_low_income = st.checkbox("📉 列冊中低收入戶")
+        has_disability = st.checkbox("♿ 領有身障手冊")
     with c2:
-        is_owner = st.checkbox("自有住宅 (桃園)")
-        is_renter = st.checkbox("租賃房屋")
-        has_car = st.checkbox("名下有汽車")
-        grandparenting = st.checkbox("協助照顧孫子女")
+        is_owner = st.checkbox("🏠 自有住宅")
+        is_renter = st.checkbox("🔑 租賃房屋")
+        grandparenting = st.checkbox("👶 協助照顧孫子女")
+        # 移除 has_car，若非核心計算邏輯可精簡，或保留依您需求
 
 # ==========================================
-# 3. 核心顯示函數
+# 5. 核心顯示函數 (卡片式設計)
 # ==========================================
-def show_item(index, name, money, qualify, note, location):
+def show_item(index, name, money, qualify, note, location, highlight=False):
+    # 如果符合資格，顯示卡片；不符合則隱藏或顯示灰色(這裡選擇顯示灰色以便教學，也可改為隱藏)
     if qualify:
+        border_color = "#2E8B57" # 綠色
+        bg_color = "#ffffff"
         icon = "✅"
-        status = "符合資格"
+        status_text = ""
+        
+        # 針對特殊重點項目 (highlight) 做視覺加強
+        if highlight:
+            border_color = "#FFD700" # 金色邊框
+            bg_color = "#fffbea"     # 淡黃底色
+
+        st.markdown(f"""
+        <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold; font-size: 18px;">{index}. {name}</div>
+                <div class="location-tag">{location}</div>
+            </div>
+            <div style="margin-top: 8px;">
+                <span class="money-tag">{money}</span>
+            </div>
+            <div style="margin-top: 8px; font-size: 15px; color: #555;">
+                💡 {note}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
     else:
-        icon = "🔒"
-        status = "未符條件"
-
-    with st.container(border=True):
-        st.write(f"**{index}. {icon} {name}**")
-        if qualify:
-            st.markdown(f'<div class="big-money">{money}</div>', unsafe_allow_html=True)
-            st.info(f"💡 {note}")
-            st.caption(f"🏛️ 承辦單位：{location}")
-        else:
-            st.caption(f"❌ {status} ({note})")
+        # 不符合資格的樣式 (可折疊或變淡)
+        with st.expander(f"🔒 {index}. {name} (未符條件)", expanded=False):
+            st.caption(f"需滿足條件：{note}")
+            st.caption(f"承辦單位：{location}")
 
 # ==========================================
-# 4. 桃園福利大清單 (33項)
+# 6. 福利清單 (復興區視角)
 # ==========================================
-st.markdown("---")
-tabs = st.tabs(["💰領錢", "🩺醫療", "🏠生活", "🚌交通", "⚰️隱藏版"])
+st.markdown("### 💰 您的專屬福利試算結果")
+
+tabs = st.tabs(["💵 現金津貼", "🩺 醫療照護", "🏠 居住交通", "🛡️ 其他權益"])
 
 # === Tab 1: 現金津貼 ===
 with tabs[0]:
-    st.subheader("💰 現金津貼試算")
+    st.caption("每月或每年定期的現金補助")
     show_item(1, "桃園老人三節禮金", "$2,500/每節 (年領$7,500)", (age>=55), "原住民55歲設籍滿6個月", "區公所社會課")
     show_item(2, "桃園重陽敬老金", "$2,500/年", (age>=55), "原住民55歲 (一般65歲)", "區公所社會課")
     show_item(3, "原住民給付 (國保)", "$4,049/月", (55<=age<65), "55-64歲專屬 (與老農互斥)", "區公所原民課")
@@ -119,51 +159,48 @@ with tabs[0]:
 
 # === Tab 2: 醫療 ===
 with tabs[1]:
-    st.subheader("🩺 醫療補助試算")
+    st.caption("牙齒、健保與輔具補助")
     show_item(7, "桃園原民假牙補助", "最高4.4萬", (age>=55), "需先至診所估價", "區公所原民課")
-    show_item(8, "健保費全額補助", "全免", (age>=55), "55-64歲原住民 (系統自動減免)", "健保局")
+    show_item(8, "健保費全額補助", "全額減免", (age>=55), "55-64歲原住民 (系統自動減免)", "健保局")
     show_item(9, "成人健康檢查", "免費", (age>=55), "每年一次 (原住民提早至55歲)", "衛生所/特約醫院")
     show_item(10, "身障輔具補助", "全額/部分", has_disability, "助聽器/氣墊床等", "區公所社會課")
 
-# === Tab 3: 住屋 ===
+# === Tab 3: 居住交通 ===
 with tabs[2]:
-    st.subheader("🏠 居住福利試算")
-    show_item(11, "桃園修繕住宅補助", "最高15萬", is_owner, "屋頂/衛浴修繕 (需自有)", "區公所原民課")
-    show_item(12, "桃園建購住宅補助", "最高22萬", is_owner, "購買或自建房屋", "區公所原民課")
-    show_item(13, "租金補貼 (300億)", "依等級 ($3000起)", is_renter, "租屋者可申請", "營建署線上申請")
-    show_item(14, "住宿式機構補助", "最高12萬/年", True, "入住機構使用者", "社會局")
+    st.caption("房屋修繕與交通優惠")
+    # 特別強調復興區的1000點
+    show_item(11, "復興區敬老愛心卡", "每月1000點", (age>=55), "復興區民專屬福利 (一般區800點)", "區公所社會課", highlight=True)
+    show_item(12, "愛心計程車", "點數折抵", (age>=55), "單趟100元以下補36點", "各大車隊")
+    show_item(13, "桃園修繕住宅補助", "最高15萬", is_owner, "屋頂/衛浴修繕 (需自有)", "區公所原民課")
+    show_item(14, "桃園建購住宅補助", "最高22萬", is_owner, "購買或自建房屋", "區公所原民課")
+    show_item(15, "租金補貼 (300億)", "依等級 ($3000起)", is_renter, "租屋者可申請", "線上申請/營建署")
 
-# === Tab 4: 交通 ===
+# === Tab 4: 其他 ===
 with tabs[3]:
-    st.subheader("🚌 交通優惠試算")
-    show_item(15, "桃園敬老愛心卡", "800點/月", (age>=55), "原住民55歲可辦理 (復興區1000點)", "區公所")
-    show_item(16, "愛心計程車", "點數折抵", (age>=55), "單趟100元以下補36點", "各大車隊")
-    show_item(17, "機捷/公車優惠", "5折/免費", (age>=55), "使用市民卡扣點", "捷運/公車")
-    show_item(18, "台鐵搭乘補助", "每趟扣點", (age>=55), "起訖站需在桃園市內 (每趟30點)", "火車站")
-
-# === Tab 5: 隱藏版 ===
-with tabs[4]:
-    st.subheader("⚰️ 其他權益試算")
-    show_item(19, "農保喪葬津貼", "$153,000", is_farmer, "農民身故 (由家屬請領)", "農會保險部")
-    show_item(20, "國保喪葬給付", "約9.8萬", (not is_farmer), "一般國保身故 (由家屬請領)", "勞保局")
-    show_item(21, "原住民法律扶助", "律師費全免", True, "訴訟/法律諮詢", "法扶基金會")
-    show_item(22, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
-    show_item(23, "使用牌照稅減免", "免稅 (1.1萬)", (has_disability and has_car), "身障者名下車輛", "稅務局")
+    st.caption("喪葬與法律扶助")
+    show_item(16, "農保喪葬津貼", "$153,000", is_farmer, "農民身故 (由家屬請領)", "農會保險部")
+    show_item(17, "國保喪葬給付", "約9.8萬", (not is_farmer), "一般國保身故 (由家屬請領)", "勞保局")
+    show_item(18, "原住民法律扶助", "律師費全免", True, "訴訟/法律諮詢", "法扶基金會")
+    show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 5. 底部聯絡區
+# 7. 底部聯絡區 (簡潔版)
 # ==========================================
 st.markdown("---")
-st.subheader("📞 諮詢窗口")
-c1, c2 = st.columns(2)
-with c1:
-    st.markdown("**桃園市相關行政單位**")
-    st.markdown("**教材設計**：三一協會")
-with c2:
-    st.markdown("**長照專線**：1966")
-    st.markdown("**市民專線**：1999")
+col_footer1, col_footer2 = st.columns(2)
 
-st.caption("⚠️ 本系統僅供內部教學使用，實際資格以政府機關核定為準。")
+with col_footer1:
+    st.markdown("#### 📞 服務專線")
+    st.markdown("🔹 **復興區公所**：(03) 382-1500")
+    st.markdown("🔹 **市民專線**：1999")
 
+with col_footer2:
+    st.markdown("#### 🏥 照護資源")
+    st.markdown("🔸 **長照專線**：1966")
+    st.markdown("🔸 **復興區衛生所**：(03) 382-2325")
 
-
+st.markdown("""
+    <div style="text-align: center; margin-top: 30px; color: #888; font-size: 12px;">
+    ⚠️ 本試算系統僅供參考，實際資格以政府機關最新核定為準。
+    </div>
+""", unsafe_allow_html=True)
