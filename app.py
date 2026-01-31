@@ -12,63 +12,76 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 🔗 連結移花接木術 (JavaScript Hijack)
+# 2. 終極突破：嘗試控制最頂層視窗 (Window.top)
 # ==========================================
-# 這是核心重點：我們不隱藏它，而是把它的網址換掉。
-# 這樣手機版就不會判定我們在「破壞」介面，所以不會強制還原。
-target_url = "https://directorfushing-1-zzqu3bet5lwp2fnzpkdoum.streamlit.app/"
-
-hijack_script = f"""
+# 這是針對 "俄羅斯娃娃" 結構的穿透攻擊
+hide_st_style = """
 <script>
-    // 定義目標網址
-    var myUrl = "{target_url}";
+    function hideStreamlitComponents() {
+        try {
+            // 嘗試抓取最外層的視窗 (Streamlit Cloud Shell)
+            var topDoc = window.top.document;
+            
+            // 定義要殺掉的目標 (包含頭像、紅條、選單)
+            var targets = [
+                '[data-testid="stHeader"]',           // 上方工具列
+                '[data-testid="stToolbar"]',          // 右上角選單與頭像
+                '.viewerBadge_container__1QSob',      // 頭像容器 (舊版 class)
+                'div[class*="viewerBadge"]',          // 頭像容器 (新版模糊比對)
+                'footer',                             // 底部文字
+                '.stFooter'                           // 底部區塊
+            ];
 
-    function hijackLinks() {{
-        // 抓取所有可能是 "Created by" 或 "ViewerBadge" 的連結 (a 標籤)
-        var anchors = window.parent.document.querySelectorAll('[data-testid="stToolbar"] a, [class*="viewerBadge"] a, .viewerBadge_container__1QSob a');
-        
-        anchors.forEach(function(a) {{
-            // 如果這個連結的網址還不是我們的目標網址
-            if (a.href !== myUrl) {{
-                // 1. 強制改成您的網址
-                a.href = myUrl;
-                
-                // 2. 設定在當前視窗開啟 (不要開新分頁)
-                a.target = "_self";
-                
-                // 3. 移除可能導致外部跳轉的屬性
-                a.removeAttribute("rel");
-                
-                // 4. (選用) 可以把這按鈕透明度調低，讓它看起來不像按鈕
-                a.style.opacity = "0.5";
-            }}
-        }});
-    }}
+            targets.forEach(selector => {
+                var elements = topDoc.querySelectorAll(selector);
+                elements.forEach(el => {
+                    //不僅隱藏，直接設為不可見且不佔空間
+                    el.style.display = 'none !important';
+                    el.style.visibility = 'hidden !important';
+                    el.style.height = '0 !important';
+                });
+            });
+            
+            // 為了雙重保險，也對當前視窗 (window.document) 做一樣的事
+            var currentDoc = window.document;
+            targets.forEach(selector => {
+                var elements = currentDoc.querySelectorAll(selector);
+                elements.forEach(el => el.style.display = 'none');
+            });
 
-    // 每 0.5 秒檢查一次，確保網址一直被鎖定
-    setInterval(hijackLinks, 500);
+        } catch (e) {
+            // 如果瀏覽器因為安全性阻擋了我們訪問 window.top，這裡會報錯
+            // 這代表 "物理上" 無法從內部移除外部框
+            console.log("無法訪問外層視窗，可能是跨域限制:", e);
+        }
+    }
+
+    // 頁面載入後執行
+    window.addEventListener('load', hideStreamlitComponents);
+    // 每 1 秒持續執行，對抗動態載入
+    setInterval(hideStreamlitComponents, 1000);
 </script>
 """
-components.html(hijack_script, height=0)
+components.html(hide_st_style, height=0)
 
 # ==========================================
-# 3. 視覺與標題設計 (CSS)
+# 3. 視覺與標題設計 (CSS 美化)
 # ==========================================
 st.markdown("""
     <style>
-    /* 這裡只做視覺美化，不再嘗試強制隱藏，避免與手機版機制衝突 */
+    /* 這裡處理我們能控制的 "房間內" 樣式 */
     
     .stApp {
         background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
     }
     
-    /* 隱藏漢堡選單 (這個通常比較聽話) */
+    /* 隱藏漢堡選單 (這個通常在房間內，比較好藏) */
+    #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
-    [data-testid="stHeader"] {visibility: hidden;}
     
-    /* 隱藏底部的 "Made with Streamlit" 文字 (這個也比較好藏) */
-    footer {display: none !important;}
+    /* 隱藏底部文字 */
+    footer {visibility: hidden;}
 
     /* 卡片與標題樣式 */
     .header-box {
@@ -78,7 +91,8 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 25px;
-        margin-top: -30px; /* 稍微往上拉 */
+        /* 如果上方被隱藏成功，這裡可以不用負邊距，或是視情況調整 */
+        margin-top: -30px; 
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .header-title { font-size: 28px; font-weight: bold; margin: 0; }
