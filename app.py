@@ -12,70 +12,65 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 🛡️ 隱形盾牌技術 (物理阻擋連結)
+# 2. 🔗 連結移花接木術 (JavaScript Hijack)
 # ==========================================
-# 原理：在螢幕的最上方和最下方，各蓋上一層透明的 div，攔截所有的點擊事件
-shield_code = """
-<style>
-    /* 定義隱形盾牌的樣式 */
-    .invisible-shield-top {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 100%;      /* 蓋住整個頂部導航列 */
-        height: 60px;     /* 高度足以覆蓋頭像和選單 */
-        z-index: 9999999; /* 層級最高，壓在所有東西上面 */
-        background: transparent; /* 透明 */
-        /* background: rgba(255,0,0,0.2); 測試時可打開這行看紅色區塊 */
-    }
-    
-    .invisible-shield-bottom {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 50px;     /* 蓋住底部浮水印 */
-        z-index: 9999999;
-        background: transparent;
-    }
-    
-    /* 還是保留原本的隱藏語法，作為雙重保險 */
-    header {visibility: hidden !important;}
-    footer {visibility: hidden !important; display: none !important;}
-    div[class^="viewerBadge"] {visibility: hidden !important;}
-</style>
+# 這是核心重點：我們不隱藏它，而是把它的網址換掉。
+# 這樣手機版就不會判定我們在「破壞」介面，所以不會強制還原。
+target_url = "https://directorfushing-1-zzqu3bet5lwp2fnzpkdoum.streamlit.app/"
 
-<div class="invisible-shield-top"></div>
-<div class="invisible-shield-bottom"></div>
-
+hijack_script = f"""
 <script>
-    // 三重保險：用 JS 強制攔截所有連向 streamlit.app 的點擊
-    document.addEventListener('click', function(e) {
-        var target = e.target.closest('a');
-        if (target && target.href && target.href.includes('streamlit')) {
-            e.preventDefault(); // 阻止跳轉
-            e.stopPropagation(); // 阻止事件傳遞
-            console.log("已攔截外部連結");
-            return false;
-        }
-    }, true);
+    // 定義目標網址
+    var myUrl = "{target_url}";
+
+    function hijackLinks() {{
+        // 抓取所有可能是 "Created by" 或 "ViewerBadge" 的連結 (a 標籤)
+        var anchors = window.parent.document.querySelectorAll('[data-testid="stToolbar"] a, [class*="viewerBadge"] a, .viewerBadge_container__1QSob a');
+        
+        anchors.forEach(function(a) {{
+            // 如果這個連結的網址還不是我們的目標網址
+            if (a.href !== myUrl) {{
+                // 1. 強制改成您的網址
+                a.href = myUrl;
+                
+                // 2. 設定在當前視窗開啟 (不要開新分頁)
+                a.target = "_self";
+                
+                // 3. 移除可能導致外部跳轉的屬性
+                a.removeAttribute("rel");
+                
+                // 4. (選用) 可以把這按鈕透明度調低，讓它看起來不像按鈕
+                a.style.opacity = "0.5";
+            }}
+        }});
+    }}
+
+    // 每 0.5 秒檢查一次，確保網址一直被鎖定
+    setInterval(hijackLinks, 500);
 </script>
 """
-components.html(shield_code, height=0)
+components.html(hijack_script, height=0)
 
 # ==========================================
-# 3. 視覺樣式 (CSS)
+# 3. 視覺與標題設計 (CSS)
 # ==========================================
 st.markdown("""
     <style>
+    /* 這裡只做視覺美化，不再嘗試強制隱藏，避免與手機版機制衝突 */
+    
     .stApp {
         background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
-        /* 因為頂部被蓋住，內容要往下移一點點，或是保持不動 */
-        margin-top: -50px;
     }
     
-    /* 標題與卡片樣式 */
+    /* 隱藏漢堡選單 (這個通常比較聽話) */
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {visibility: hidden;}
+    
+    /* 隱藏底部的 "Made with Streamlit" 文字 (這個也比較好藏) */
+    footer {display: none !important;}
+
+    /* 卡片與標題樣式 */
     .header-box {
         background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
         padding: 20px;
@@ -83,10 +78,8 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 25px;
+        margin-top: -30px; /* 稍微往上拉 */
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        /* 確保標題本身可以被點擊(雖然沒功能)，不被盾牌蓋太多 */
-        position: relative;
-        z-index: 1; 
     }
     .header-title { font-size: 28px; font-weight: bold; margin: 0; }
     .header-subtitle { font-size: 18px; opacity: 0.9; margin-top: 5px; }
