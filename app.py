@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # ==========================================
-# 1. 系統設定 (復興區專屬版)
+# 1. 系統設定
 # ==========================================
 st.set_page_config(
     page_title="復興區長者福利試算系統",
@@ -12,84 +12,62 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. 核彈級隱藏工程 (CSS + JavaScript)
+# 2. 終極手段：DOM 變動偵測器 (MutationObserver)
 # ==========================================
-def inject_hide_style():
-    # 1. 強力 CSS 隱藏
-    hide_css = """
-    <style>
-        /* 隱藏上方選單與 Header */
-        header {visibility: hidden !important; display: none !important;}
-        [data-testid="stHeader"] {visibility: hidden !important; display: none !important;}
+# 這是比 CSS 強 100 倍的方法，它會主動攻擊浮水印
+kill_watermark_script = """
+<script>
+    // 定義一個殺手函數
+    function killWatermark() {
+        // 1. 針對手機版頂部 Header (漢堡選單那條)
+        var header = window.parent.document.querySelectorAll('[data-testid="stHeader"]');
+        header.forEach(el => el.style.display = 'none');
         
-        /* 隱藏底部 Footer */
-        footer {visibility: hidden !important; display: none !important;}
-        .stFooter {display: none !important;}
+        // 2. 針對底部 "Hosted with Streamlit" 紅色Bar
+        var footer = window.parent.document.querySelectorAll('footer');
+        footer.forEach(el => el.style.display = 'none');
         
-        /* 隱藏右下角/底部的浮水印 (Hosted with Streamlit) */
-        div[class^="viewerBadge"] {visibility: hidden !important; display: none !important;}
-        .viewerBadge_container__1QSob {display: none !important;}
-        
-        /* 隱藏頭像與 Created by */
-        div[data-testid="stToolbar"] {display: none !important;}
-        div[data-testid="stDecoration"] {display: none !important;}
-        div[data-testid="stStatusWidget"] {display: none !important;}
-        
-        /* 手機版調整 */
-        .stApp {margin-top: -80px;} /* 強制往上拉，蓋住可能的殘留 */
-    </style>
-    """
-    st.markdown(hide_css, unsafe_allow_html=True)
+        var viewerBadge = window.parent.document.querySelectorAll('[class*="viewerBadge"]');
+        viewerBadge.forEach(el => el.style.display = 'none');
 
-    # 2. JavaScript 異步移除 (針對頑強元素)
-    # 這段 JS 會每隔 0.5 秒檢查一次頁面，發現浮水印就直接砍掉 DOM 節點
-    hide_js = """
-    <script>
-        function removeWatermarks() {
-            // 鎖定所有可能的浮水印 class 關鍵字
-            const selectors = [
-                'div[class*="viewerBadge"]',
-                '[data-testid="stHeader"]',
-                'footer',
-                'div[data-testid="stToolbar"]'
-            ];
-            
-            selectors.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(el => {
-                    el.style.display = 'none';
-                    el.style.visibility = 'hidden';
-                    el.innerHTML = ''; // 清空內容
-                });
-            });
-        }
+        // 3. 針對 "Created by" 頭像
+        var toolbar = window.parent.document.querySelectorAll('[data-testid="stToolbar"]');
+        toolbar.forEach(el => el.style.display = 'none');
         
-        // 頁面加載後執行
-        window.addEventListener('load', function() {
-            removeWatermarks();
-            // 每 500 毫秒再殺一次，確保動態載入的也被刪除
-            setInterval(removeWatermarks, 500);
-        });
-    </script>
-    """
-    # 將 JS 注入到頁面底部 (height=0 隱藏執行框)
-    components.html(hide_js, height=0)
+        var decoration = window.parent.document.querySelectorAll('[data-testid="stDecoration"]');
+        decoration.forEach(el => el.style.display = 'none');
+        
+        var statusWidget = window.parent.document.querySelectorAll('[data-testid="stStatusWidget"]');
+        statusWidget.forEach(el => el.style.display = 'none');
+    }
 
-# 執行隱藏指令
-inject_hide_style()
+    // 啟動一個觀察者，只要網頁有任何變動，就執行殺手函數
+    var observer = new MutationObserver(function(mutations) {
+        killWatermark();
+    });
+
+    // 開始監視整個網頁
+    observer.observe(window.parent.document.body, { childList: true, subtree: true });
+    
+    // 另外再加一個定時器，每 100ms 補刀一次，確保萬無一失
+    setInterval(killWatermark, 100);
+</script>
+"""
+components.html(kill_watermark_script, height=0)
 
 # ==========================================
-# 3. CSS 美化設計 (視覺優化)
+# 3. 視覺樣式 (保持原樣)
 # ==========================================
 st.markdown("""
     <style>
-    /* === 全站字體與背景 === */
     .stApp {
         background-color: #f8f9fa;
         font-family: "Microsoft JhengHei", sans-serif;
+        /* 強制將內容往上推，蓋住可能殘留的頂部空白 */
+        margin-top: -60px; 
     }
     
-    /* === 標題區塊設計 === */
+    /* 卡片樣式 */
     .header-box {
         background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
         padding: 20px;
@@ -97,46 +75,18 @@ st.markdown("""
         color: white;
         text-align: center;
         margin-bottom: 25px;
-        margin-top: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .header-title {
-        font-size: 28px;
-        font-weight: bold;
-        margin: 0;
-    }
-    .header-subtitle {
-        font-size: 18px;
-        opacity: 0.9;
-        margin-top: 5px;
-    }
-    
-    /* === 福利卡片設計 === */
-    .benefit-card {
-        background-color: white;
-        border-left: 5px solid #2E8B57;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .money-tag {
-        color: #d63384; 
-        font-size: 22px;
-        font-weight: 900;
-    }
-    .location-tag {
-        font-size: 14px;
-        color: #666;
-        background-color: #f1f3f5;
-        padding: 2px 8px;
-        border-radius: 10px;
-    }
+    .header-title { font-size: 28px; font-weight: bold; margin: 0; }
+    .header-subtitle { font-size: 18px; opacity: 0.9; margin-top: 5px; }
+    .benefit-card { background-color: white; border-left: 5px solid #2E8B57; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .money-tag { color: #d63384; font-size: 22px; font-weight: 900; }
+    .location-tag { font-size: 14px; color: #666; background-color: #f1f3f5; padding: 2px 8px; border-radius: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. 頁面標題區 (蘇佐璽區長形象)
+# 4. 內容區
 # ==========================================
 st.markdown("""
     <div class="header-box">
@@ -145,12 +95,8 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 5. 輸入區 (條件設定)
-# ==========================================
 with st.container(border=True):
     st.markdown("### 📝 請勾選長輩狀況")
-    
     col_age, col_res = st.columns([1, 2])
     with col_age:
         age = st.number_input("長輩年齡 (歲)", 50, 120, 55)
@@ -167,17 +113,13 @@ with st.container(border=True):
         is_renter = st.checkbox("🔑 租賃房屋")
         grandparenting = st.checkbox("👶 協助照顧孫子女")
 
-# ==========================================
-# 6. 核心顯示函數
-# ==========================================
 def show_item(index, name, money, qualify, note, location, highlight=False):
     if qualify:
-        border_color = "#2E8B57" # 綠色
+        border_color = "#2E8B57"
         bg_color = "#ffffff"
-        
         if highlight:
-            border_color = "#FFD700" # 金色
-            bg_color = "#fffbea"     # 淡黃底色
+            border_color = "#FFD700"
+            bg_color = "#fffbea"
 
         st.markdown(f"""
         <div style="background-color: {bg_color}; border-left: 5px solid {border_color}; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -198,11 +140,7 @@ def show_item(index, name, money, qualify, note, location, highlight=False):
             st.caption(f"需滿足條件：{note}")
             st.caption(f"承辦單位：{location}")
 
-# ==========================================
-# 7. 福利清單
-# ==========================================
 st.markdown("### 💰 您的專屬福利試算結果")
-
 tabs = st.tabs(["💵 現金津貼", "🩺 醫療照護", "🏠 居住交通", "🛡️ 其他權益"])
 
 with tabs[0]:
@@ -237,16 +175,14 @@ with tabs[3]:
     show_item(19, "意外保險 (微型)", "最高30萬", is_low_income, "市府代為投保", "社會局")
 
 # ==========================================
-# 8. 底部聯絡區 (純淨版)
+# 5. 底部聯絡區
 # ==========================================
 st.markdown("---")
 col_footer1, col_footer2 = st.columns(2)
-
 with col_footer1:
     st.markdown("#### 📞 服務專線")
     st.markdown("🔹 **復興區公所**：(03) 382-1500")
     st.markdown("🔹 **市民專線**：1999")
-
 with col_footer2:
     st.markdown("#### 🏥 照護資源")
     st.markdown("🔸 **長照專線**：1966")
